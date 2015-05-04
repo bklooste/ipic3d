@@ -221,6 +221,113 @@ void Particles3D::maxwellian(Field * EMf)
   }
 }
 
+/** GLD Mar 15, RAMSCB velocity and uniform spatial distribution */
+void Particles3D::ramscb(Field * EMf)
+{
+  int N=798, Ntable=100001;
+  double lam=1.0/30.0;
+  int i, j, ip, ind, ind1, ind2;
+  double f[798][798];
+  double vpe[798], vpa[798];
+  double x[100001], fun[100001];
+  double dvpa, dvpe, fmax, C, ffint, df;
+
+  /* initialize random generator with different seed on different processor */
+  srand(vct->getCartesian_rank() + 2);
+
+  assert_eq(_pcls.size(),0);
+
+ // read the distribution function
+  ifstream file;
+  file.open("aux/osh018_e_L5.5_MLT12.txt");
+  double a1, a2, a3;
+  for (i=0; i<=N-1; i++)
+  {
+    for (j=0; j<=N-1; j++)
+    {
+      file>>a1>>a2>>a3;
+      f[i][j]=a1;
+      if (i==1)
+	vpe[j]=a3/300000000.0;
+    }
+    vpa[i]=a2/300000000.0;
+  }
+  file.close();
+   
+  // define grid spacing
+  dvpe=vpe[1]-vpe[0];
+  dvpa=vpa[1]-vpa[0];
+   
+  // calculate maximum of f
+  fmax=0.0;
+  for (i=0; i<=N-1; i++)
+  {
+    for (j=0; j<=N-1; j++)
+    {
+      if (f[i][j]>fmax)
+	fmax=f[i][j];
+    }
+  }
+
+  // calculate constant C for rejection method
+  C=0.0;
+  for (i=0; i<=N-1; i++)
+  {
+    for (j=0; j<=N-1; j++)
+    {
+      a1=vpa[i];
+      a2=vpe[j];
+      ffint=fexp(a1,a2,lam,fmax);
+      if (f[i][j]/ffint>C)
+	C=f[i][j]/ffint;
+    }
+  }
+   
+  // read table
+  ifstream file2;
+  file2.open("aux/table.txt");
+  for (i=0; i<=Ntable-1; i++)
+  {
+    file2>>x[i]>>fun[i];
+  }
+  file2.close();
+  df=fun[1]-fun[0];
+
+  const double q_sgn = (qom / fabs(qom));
+  // multipled by charge density gives charge per particle
+  const double q_factor =  q_sgn * grid->getVOL() / npcel;
+  //  double vec0[1];
+  for (int i = 1; i < grid->getNXC() - 1; i++)
+  {
+  for (int j = 1; j < grid->getNYC() - 1; j++)
+  for (int k = 1; k < grid->getNZC() - 1; k++)
+  {
+    const double q = q_factor * EMf->getRHOcs(i, j, k, ns);
+    // initial call of the random generator
+    //sobseq(-1, vec0);
+    for (int ii = 0; ii < npcelx; ii++)
+    for (int jj = 0; jj < npcely; jj++)
+    for (int kk = 0; kk < npcelz; kk++)
+    {
+      double u,v,w;
+      sample_ramscb(u,v,w,dvpa,dvpe,df,vpa,vpe,f,x,fun,lam,fmax,C);
+      // could also sample positions randomly as in repopulate_particles();
+      const double x = (ii + .5) * (dx / npcelx) + grid->getXN(i, j, k);
+      const double y = (jj + .5) * (dy / npcely) + grid->getYN(i, j, k);
+      const double z = (kk + .5) * (dz / npcelz) + grid->getZN(i, j, k);
+      create_new_particle(u,v,w,q,x,y,z);
+    }
+  }
+  cout<<endl;
+  cout<<a1<<endl;
+  cout<<endl;
+  //dprintf("capacity=%d, size=%d", _pcls.capacity(), getNOP());
+  }
+  //dprintf("number of particles of species %d: %d", ns, getNOP());
+  const int num_ids = 1;
+  longid id_list[num_ids] = {0};
+  //print_pcls(_pcls,ns,id_list, num_ids);
+}
 
 /** pitch_angle_energy initialization (Assume B on z only) for test particles */
 void Particles3D::pitch_angle_energy(Field * EMf) {
