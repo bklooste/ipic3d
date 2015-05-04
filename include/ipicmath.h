@@ -3,6 +3,7 @@
 #include "assert.h"
 #include "math.h"
 #include "stdlib.h" // for rand
+#include "debug.h"
 
 // valid if roundup power is representable.
 inline int
@@ -134,6 +135,82 @@ inline void sample_maxwellian(
   u = u0 + ut*u;
   v = v0 + vt*v;
   w = w0 + wt*w;
+}
+
+
+// GLD mar 15
+inline double fexp(double va, double ve, double lam, double fmax)
+{
+    double ff;
+    ff=fmax*exp(-sqrt(pow(va,2)+pow(ve,2))/lam);
+    return ff;
+}
+
+// GLD mar 15 - assumes that parallel is z
+inline double sample_ramscb(
+  double& u, double& v, double& w,
+  double dvpa, double dvpe, double df,
+  double vpa[798], double vpe[798],double f[798][798],
+  double x[100001], double fun[100001],double lam, double fmax,double C)
+{
+  int N=798;
+  int i, j, ip, ind, ind1, ind2;
+  double b, R, xi, vec1, vec2, vec3, vec4;
+  double w1, w2, fint, ffint;  
+  int m=1;
+  double vec0[1];
+
+  //  cout << endl;
+  //cout <<"calling sample_ramscb"<< endl;
+  //cout <<"---------------------"<< endl;
+  // Rejection-method
+
+  ip=0;
+  do
+  {
+    ip=ip+1;
+   
+    b=sample_u_double();
+    ind=floor(b/df);
+    R=lam*(x[ind]+(x[ind+1]-x[ind])/df*(b-fun[ind]));       
+
+    xi=0.5*M_PI*sample_u_double();
+    vec1=R*sin(xi); // parallel
+    vec2=R*cos(xi); // perpendicular
+    vec3=sample_u_double();
+
+    ind1=floor((vec1-vpa[0])/dvpa);
+    ind2=floor((vec2-vpe[0])/dvpe);
+       
+    if (((ind1>=0)&&(ind2>=0))&&((ind1<N-1)&&(ind2<N-1)))
+    {
+      w1=(vec1-vpa[ind1])/dvpa;
+      w2=(vec2-vpe[ind2])/dvpe;
+           
+      fint=f[ind1+1][ind2+1]*w1*w2+f[ind1][ind2]*(1.0-w1)*(1.0-w2)+f[ind1+1][ind2]*w1*(1.0-w2)+f[ind1][ind2+1]*(1.0-w1)*w2;
+      ffint=fexp(vec1,vec2,lam,fmax);
+      
+      if (vec3<fint/(C*ffint)) //accept
+      {
+	vec4=sample_u_double();
+	if (vec4>0.5)
+	  {
+	    w=vec1;
+	  }
+	else
+	  {
+	    w=-vec1;
+	  }
+	vec3=2.0*M_PI*sample_u_double();
+	u=vec2*cos(vec3);
+	v=vec2*sin(vec3);
+      }
+      else
+	ip=ip-1;
+    }
+    else
+            ip=ip-1;
+  } while (ip<1);
 }
 
 // add or subtract multiples of L until x lies
