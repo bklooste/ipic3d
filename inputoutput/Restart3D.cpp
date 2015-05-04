@@ -304,8 +304,10 @@ void read_particles_restart(
 
     stringstream species_name;
     species_name << species_number;
-    // the cycle of the last restart is set to 0
-    string name_dataset = "/particles/species_" + species_name.str() + "/x/cycle_0";
+    // the cycle of the last restart is set to last_cycle
+    stringstream last_cycle;
+    last_cycle   << col->getLast_cycle();
+    string name_dataset = "/particles/species_" + species_name.str() + "/x/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     datatype = H5Dget_type(dataset_id);
     size = H5Tget_size(datatype);
@@ -347,34 +349,34 @@ void read_particles_restart(
     status = H5Dclose(dataset_id);
 
     // get y
-    name_dataset = "/particles/species_" + species_name.str() + "/y/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/y/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &y[0]);
     status = H5Dclose(dataset_id);
 
     // get z
-    name_dataset = "/particles/species_" + species_name.str() + "/z/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/z/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &z[0]);
     status = H5Dclose(dataset_id);
 
     // get u
-    name_dataset = "/particles/species_" + species_name.str() + "/u/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/u/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &u[0]);
     status = H5Dclose(dataset_id);
     // get v
-    name_dataset = "/particles/species_" + species_name.str() + "/v/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/v/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &v[0]);
     status = H5Dclose(dataset_id);
     // get w
-    name_dataset = "/particles/species_" + species_name.str() + "/w/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/w/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &w[0]);
     status = H5Dclose(dataset_id);
     // get q
-    name_dataset = "/particles/species_" + species_name.str() + "/q/cycle_0";
+    name_dataset = "/particles/species_" + species_name.str() + "/q/cycle_"+last_cycle.str();
     dataset_id = H5Dopen2(file_id, name_dataset.c_str(), H5P_DEFAULT); // HDF 1.8.8
     status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &q[0]);
     status = H5Dclose(dataset_id);
