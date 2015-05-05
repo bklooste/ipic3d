@@ -121,6 +121,7 @@ int c_Solver::Init(int argc, char **argv) {
 #ifdef BATSRUS
   else if (col->getCase()=="BATSRUS")   EMf->initBATSRUS();
 #endif
+  else if (col->getCase()=="BzCurved")  EMf->initBzCurved(vct,grid,col);//Bz varies along Z (1D)
   else if (col->getCase()=="Dipole")    EMf->initDipole();
   else if (col->getCase()=="Dipole2D")    EMf->initDipole2D();
   else if (col->getCase()=="RandomCase") {

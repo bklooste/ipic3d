@@ -53,6 +53,8 @@ class EMfields3D                // :public Field
     /*! Initialise a combination of magnetic dipoles */
     void initDipole();
     void initDipole2D();
+    /*! Initialize a magnetic field in Z direction curved*/
+    void initBzCurved(VirtualTopology3D *vct, Grid *grid, Collective *col);
     /*! Calculate Electric field using the implicit Maxwell solver */
     void calculateE();
     /*! Image of Poisson Solver (for SOLVER) */

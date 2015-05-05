@@ -4231,6 +4231,109 @@ void EMfields3D::initDipole2D()
 	}
 }
 
+
+/*! Yu, Y.: Initialise an inhomogenous B background, curved B along Z direction */
+/*! follow Tao 2014 paper on the Bx,y,z components. */
+void EMfields3D::initBzCurved(VirtualTopology3D *vct, Grid *grid, Collective *col){
+  
+  
+  // initialize
+  // the center is at the equator
+    if (vct->getCartesian_rank() ==0){
+        cout << "------------------------------------------" << endl;
+        cout << "Initialise a Curved Magnetic Field in Z direction " << endl;
+        cout << "------------------------------------------" << endl;
+        cout << "B0x                              = " << B0x << endl;
+        cout << "B0y                              = " << B0y << endl;
+        cout << "B0z                              = " << B0z << endl;
+        cout << "Center equator - X                = " << x_center << endl;
+        cout << "Center equator - Y                = " << y_center << endl;
+        cout << "Center equator - Z                = " << z_center << endl;
+    }
+
+    double x_dis, y_dis, z_dis;
+    
+    double ebc[3];
+    cross_product(ue0,ve0,we0,B0x,B0y,B0z,ebc);
+    scale(ebc,-1.0,3);
+    
+    double a=L_square;
+    double L0=5.0;// for B field at Lshell = 5.0
+    
+    double xc=x_center;
+    double yc=y_center;
+    double zc=z_center;
+    
+    double eta = 4.5/(L0*L0*a*a); //follow Tao 2014 for the dipole field
+
+    for (int i=0; i < nxn; i++){
+        for (int j=0; j < nyn; j++){
+            for (int k=0; k < nzn; k++){
+                for (int is=0; is < ns; is++){
+                    rhons[is][i][j][k] = rhoINIT[is]/FourPI;
+                }
+                Ex[i][j][k] = ebc[0];
+                Ey[i][j][k] = ebc[1];
+                Ez[i][j][k] = ebc[2];
+
+		
+                double x = grid->getXN(i,j,k);
+                double y = grid->getYN(i,j,k);
+                double z = grid->getZN(i,j,k);
+                
+		x_dis = x - xc;
+		y_dis = y - yc;
+		z_dis = z - zc;
+		
+                // Compute Bx,y,z components in parabolic function
+		Bxn[i][j][k] = - B0z * eta * x_dis * z_dis;
+		Byn[i][j][k] = - B0z * eta * y_dis * z_dis;
+		Bzn[i][j][k] =   B0z * (1 + eta*z_dis*z_dis);
+
+            }
+        }
+    }
+    communicateNodeBC(nxn,nyn,nzn,Bxn,col->bcBx[0],col->bcBx[1],col->bcBx[2],col->bcBx[3],col->bcBx[4],col->bcBx[5],vct, this);
+    communicateNodeBC(nxn,nyn,nzn,Byn,col->bcBy[0],col->bcBy[1],col->bcBy[2],col->bcBy[3],col->bcBy[4],col->bcBy[5],vct, this);
+    communicateNodeBC(nxn,nyn,nzn,Bzn,col->bcBz[0],col->bcBz[1],col->bcBz[2],col->bcBz[3],col->bcBz[4],col->bcBz[5],vct, this);
+    
+    // initialize B fields on centers
+    for (int i=0; i< nxc; i++){
+      for (int j=0; j<nyc; j++){
+	for (int k=0; k<nzc; k++){
+                
+	  double x = grid->getXC(i,j,k);
+	  double y = grid->getYC(i,j,k);
+	  double z = grid->getZC(i,j,k);
+          
+	  x_dis = x - xc;
+	  y_dis = y - yc;
+	  z_dis = z - zc;
+
+	  Bxc[i][j][k] = - B0z *eta *x_dis*z_dis;
+	  Byc[i][j][k] = - B0z * eta * y_dis * z_dis;
+	  Bzc[i][j][k] =   B0z * (1 + eta*z_dis*z_dis);
+	}
+      }
+    }
+
+    //grid->interpN2C(Bxc,Bxn);
+    //grid->interpN2C(Byc,Byn);
+    //grid->interpN2C(Bzc,Bzn);
+    
+    communicateCenterBC(nxc,nyc,nzc,Bxc,col->bcBx[0],col->bcBx[1],col->bcBx[2],col->bcBx[3],col->bcBx[4],col->bcBx[5],vct, this);
+    communicateCenterBC(nxc,nyc,nzc,Byc,col->bcBy[0],col->bcBy[1],col->bcBy[2],col->bcBy[3],col->bcBy[4],col->bcBy[5],vct, this);
+    communicateCenterBC(nxc,nyc,nzc,Bzc,col->bcBz[0],col->bcBz[1],col->bcBz[2],col->bcBz[3],col->bcBz[4],col->bcBz[5],vct, this);
+
+    for (int is=0 ; is<ns; is++)
+        grid->interpN2C(rhocs,is,rhons);
+    
+    if (restart1 != 0) { // EM initialization from RESTART
+      init();  // use the fields from restart file
+    }
+
+}
+
 /*! Calculate the susceptibility on the boundary leftX */
 void EMfields3D::sustensorLeftX(double **susxx, double **susyx, double **suszx) {
   double beta, omcx, omcy, omcz, denom;
