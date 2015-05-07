@@ -156,7 +156,7 @@ int c_Solver::Init(int argc, char **argv) {
 #ifdef BATSRUS
       else if (col->getCase()=="BATSRUS")   part[i].MaxwellianFromFluid(EMf,col,i);
 #endif
-      else if (col->getParticleCase(i)==3)   part[i].ramscb(EMf);
+      else if (col->getCase()=="RAMSCB")   part[i].ramscb(EMf);
       else                                  part[i].maxwellian(EMf);
       part[i].reserve_remaining_particle_IDs();
     }

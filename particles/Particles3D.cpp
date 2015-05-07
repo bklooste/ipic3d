@@ -7,6 +7,7 @@ developers: Stefano Markidis, Giovanni Lapenta
 
 #include <mpi.h>
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include <limits.h>
 #include "asserts.h"
